@@ -1,6 +1,5 @@
 import graphene
 from graphene_django import DjangoObjectType
-from graphene_django.filter import DjangoFilterConnectionField
 from apps.organizations.models import Organization
 from apps.projects.models import Project
 from apps.tasks.models import Task, TaskComment
@@ -26,12 +25,6 @@ class OrganizationType(DjangoObjectType):
             'created_at', 
             'updated_at'
         )
-        filter_fields = {
-            'name': ['exact', 'icontains'],
-            'slug': ['exact'],
-            'is_active': ['exact'],
-            'created_at': ['gte', 'lte'],
-        }
     
     def resolve_project_count(self, info):
         return self.project_count
@@ -70,14 +63,6 @@ class ProjectType(DjangoObjectType):
             'created_at',
             'updated_at'
         )
-        filter_fields = {
-            'name': ['exact', 'icontains'],
-            'status': ['exact', 'in'],
-            'organization': ['exact'],
-            'organization__name': ['icontains'],
-            'due_date': ['gte', 'lte'],
-            'created_at': ['gte', 'lte'],
-        }
     
     def resolve_task_count(self, info):
         return self.task_count
@@ -125,17 +110,6 @@ class TaskType(DjangoObjectType):
             'created_at',
             'updated_at'
         )
-        filter_fields = {
-            'title': ['exact', 'icontains'],
-            'status': ['exact', 'in'],
-            'priority': ['exact', 'in'],
-            'project': ['exact'],
-            'project__organization': ['exact'],
-            'project__organization__slug': ['exact'],
-            'assignee_email': ['exact', 'icontains'],
-            'due_date': ['gte', 'lte'],
-            'created_at': ['gte', 'lte'],
-        }
     
     def resolve_comment_count(self, info):
         return self.comment_count
@@ -166,13 +140,6 @@ class TaskCommentType(DjangoObjectType):
             'created_at',
             'updated_at'
         )
-        filter_fields = {
-            'task': ['exact'],
-            'task__project': ['exact'],
-            'task__project__organization': ['exact'],
-            'author_email': ['exact', 'icontains'],
-            'created_at': ['gte', 'lte'],
-        }
 
 
 # Custom scalar types for choices

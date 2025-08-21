@@ -1,5 +1,5 @@
 import graphene
-from graphene_django.filter import DjangoFilterConnectionField
+from graphene_django import DjangoObjectType
 from django.db.models import Q, Count, Case, When, IntegerField
 from apps.organizations.models import Organization
 from apps.projects.models import Project
@@ -16,21 +16,19 @@ from .types import (
 
 
 class Query(graphene.ObjectType):
-    """Root GraphQL query"""
-    
     organization = graphene.Field(OrganizationType, slug=graphene.String(required=True))
-    organizations = DjangoFilterConnectionField(OrganizationType)
+    organizations = graphene.List(OrganizationType)
     
     project = graphene.Field(ProjectType, id=graphene.ID(required=True))
-    projects = DjangoFilterConnectionField(
+    projects = graphene.List(
         ProjectType,
         organization_slug=graphene.String(),
         status=graphene.String(),
         search=graphene.String()
     )
-
+    
     task = graphene.Field(TaskType, id=graphene.ID(required=True))
-    tasks = DjangoFilterConnectionField(
+    tasks = graphene.List(
         TaskType,
         organization_slug=graphene.String(),
         project_id=graphene.ID(),
@@ -40,7 +38,7 @@ class Query(graphene.ObjectType):
         search=graphene.String()
     )
     
-    task_comments = DjangoFilterConnectionField(
+    task_comments = graphene.List(
         TaskCommentType,
         task_id=graphene.ID(required=True)
     )
@@ -61,18 +59,15 @@ class Query(graphene.ObjectType):
     )
     
     def resolve_organization(self, info, slug):
-        """Get single organization by slug"""
         try:
             return Organization.objects.get(slug=slug, is_active=True)
         except Organization.DoesNotExist:
             return None
     
     def resolve_organizations(self, info, **kwargs):
-        """Get all organizations with filtering"""
         return Organization.objects.filter(is_active=True)
     
     def resolve_project(self, info, id):
-        """Get single project by ID"""
         try:
             project = Project.objects.select_related('organization').get(id=id)
             return project
@@ -80,7 +75,6 @@ class Query(graphene.ObjectType):
             return None
     
     def resolve_projects(self, info, organization_slug=None, status=None, search=None, **kwargs):
-        """Get projects with filtering and search"""
         queryset = Project.objects.select_related('organization').prefetch_related('tasks')
         
         if organization_slug:
@@ -97,7 +91,6 @@ class Query(graphene.ObjectType):
         return queryset.order_by('-created_at')
     
     def resolve_task(self, info, id):
-        """Get single task by ID"""
         try:
             task = Task.objects.select_related('project__organization').prefetch_related('comments').get(id=id)
             return task
@@ -106,7 +99,6 @@ class Query(graphene.ObjectType):
     
     def resolve_tasks(self, info, organization_slug=None, project_id=None, status=None, 
                      priority=None, assignee_email=None, search=None, **kwargs):
-        """Get tasks with comprehensive filtering"""
         queryset = Task.objects.select_related('project__organization').prefetch_related('comments')
         
         if organization_slug:
@@ -132,18 +124,15 @@ class Query(graphene.ObjectType):
         return queryset.order_by('-created_at')
     
     def resolve_task_comments(self, info, task_id, **kwargs):
-        """Get comments for a specific task"""
         return TaskComment.objects.filter(task_id=task_id).order_by('created_at')
     
     def resolve_organization_stats(self, info, organization_slug):
-        """Get comprehensive organization statistics"""
         try:
             org = Organization.objects.get(slug=organization_slug, is_active=True)
         except Organization.DoesNotExist:
             return None
         
         project_stats = self._get_project_stats(org)
-        
         task_stats = self._get_task_stats(org)
         
         return OrganizationStatsType(
@@ -154,7 +143,6 @@ class Query(graphene.ObjectType):
         )
     
     def resolve_project_stats(self, info, organization_slug, project_id=None):
-        """Get project statistics"""
         try:
             org = Organization.objects.get(slug=organization_slug, is_active=True)
         except Organization.DoesNotExist:
@@ -163,7 +151,6 @@ class Query(graphene.ObjectType):
         return self._get_project_stats(org, project_id)
     
     def resolve_task_stats(self, info, organization_slug, project_id=None):
-        """Get task statistics"""
         try:
             org = Organization.objects.get(slug=organization_slug, is_active=True)
         except Organization.DoesNotExist:
@@ -172,7 +159,6 @@ class Query(graphene.ObjectType):
         return self._get_task_stats(org, project_id)
     
     def _get_project_stats(self, organization, project_id=None):
-        """Calculate project statistics"""
         queryset = organization.projects.all()
         if project_id:
             queryset = queryset.filter(id=project_id)
@@ -199,7 +185,6 @@ class Query(graphene.ObjectType):
         )
     
     def _get_task_stats(self, organization, project_id=None):
-        """Calculate task statistics"""
         queryset = Task.objects.filter(project__organization=organization)
         if project_id:
             queryset = queryset.filter(project_id=project_id)
@@ -233,7 +218,6 @@ class Query(graphene.ObjectType):
         )
     
     def _get_recent_activity_count(self, organization):
-        """Count recent activity (tasks and comments from last 7 days)"""
         from django.utils import timezone
         from datetime import timedelta
         
@@ -252,7 +236,6 @@ class Query(graphene.ObjectType):
         return recent_tasks + recent_comments
     
     def _get_active_users_count(self, organization):
-        """Count unique active users (people who commented or are assigned tasks)"""
         assignees = set(Task.objects.filter(
             project__organization=organization,
             assignee_email__isnull=False

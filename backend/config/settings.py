@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # Third party apps
     'graphene_django',
     'corsheaders',
+    'django_filters',
     
     # Local apps
     'apps.organizations',
