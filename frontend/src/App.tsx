@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { useQuery } from "@apollo/client";
+import { GET_ORGANIZATIONS } from "./graphql/queries";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 
 function App() {
   const [count, setCount] = useState(0);
+  const { loading, error, data } = useQuery(GET_ORGANIZATIONS);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -36,12 +39,12 @@ function App() {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Project Management System
           </h1>
-          <p className="text-lg text-red-700">
-            Built with Vite + React + TypeScript + Tailwind CSS
+          <p className="text-lg text-gray-600">
+            Built with Vite + React + TypeScript + Tailwind CSS + Apollo GraphQL
           </p>
         </div>
 
-        <div className="card max-w-md mx-auto">
+        <div className="card max-w-md mx-auto mb-8">
           <div className="card-body text-center">
             <button
               className="btn-primary mb-4"
@@ -59,7 +62,41 @@ function App() {
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="card mb-8">
+          <div className="card-header">
+            <h3 className="font-medium">GraphQL API Test</h3>
+          </div>
+          <div className="card-body">
+            {loading && (
+              <p className="text-gray-600">Loading organizations...</p>
+            )}
+            {error && <p className="text-red-600">Error: {error.message}</p>}
+            {data && (
+              <div>
+                <p className="text-green-600 mb-2">
+                  ✅ GraphQL connection successful!
+                </p>
+                <p className="text-sm text-gray-600">
+                  Found {data.organizations.length} organizations
+                </p>
+                {data.organizations.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {data.organizations.map((org: any) => (
+                      <div key={org.id} className="p-2 bg-gray-100 rounded">
+                        <span className="font-medium">{org.name}</span>
+                        <span className="text-sm text-gray-500 ml-2">
+                          ({org.slug})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="card">
             <div className="card-header">
               <h3 className="font-medium">Frontend</h3>
@@ -70,6 +107,7 @@ function App() {
                 <div className="badge-primary">TypeScript</div>
                 <div className="badge-primary">Vite</div>
                 <div className="badge-primary">Tailwind CSS</div>
+                <div className="badge-primary">Apollo Client</div>
               </div>
             </div>
           </div>
