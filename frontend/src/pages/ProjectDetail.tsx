@@ -5,6 +5,7 @@ import type { Project } from "../types";
 import Layout from "../components/common/Layout";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import TaskBoard from "../components/tasks/TaskBoard";
+import { getStatusBadgeClass } from "../utils/helpers";
 
 interface ProjectDetailParams {
   organizationSlug: string;
@@ -145,19 +146,4 @@ export default function ProjectDetail() {
       </div>
     </Layout>
   );
-}
-
-function getStatusBadgeClass(status: string): string {
-  switch (status) {
-    case "ACTIVE":
-      return "badge-success";
-    case "COMPLETED":
-      return "badge-primary";
-    case "ON_HOLD":
-      return "badge-warning";
-    case "CANCELLED":
-      return "badge-danger";
-    default:
-      return "badge-gray";
-  }
 }
