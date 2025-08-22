@@ -1,145 +1,155 @@
-import { useState } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useQuery } from "@apollo/client";
 import { GET_ORGANIZATIONS } from "./graphql/queries";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import Dashboard from "./pages/Dashboard";
+import ProjectDetail from "./pages/ProjectDetail";
 
 function App() {
-  const [count, setCount] = useState(0);
   const { loading, error, data } = useQuery(GET_ORGANIZATIONS);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading organizations...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">
+            Connection Error
+          </h1>
+          <p className="text-gray-600 mb-4">{error.message}</p>
+          <p className="text-sm text-gray-500">
+            Make sure the Django backend is running at http://localhost:8000
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const organizations = data?.organizations || [];
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-8">
-          <div className="flex justify-center items-center space-x-4 mb-6">
-            <a
-              href="https://vitejs.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src={viteLogo}
-                className="h-16 w-16 hover:animate-bounce"
-                alt="Vite logo"
-              />
-            </a>
-            <a
-              href="https://react.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img
-                src={reactLogo}
-                className="h-16 w-16 animate-spin"
-                alt="React logo"
-              />
-            </a>
-          </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+    <Router>
+      <div className="min-h-screen bg-gray-50">
+        <Routes>
+          <Route
+            path="/"
+            element={
+              organizations.length > 0 ? (
+                <Navigate to={`/${organizations[0].slug}`} replace />
+              ) : (
+                <WelcomePage />
+              )
+            }
+          />
+          <Route path="/:organizationSlug" element={<Dashboard />} />
+          <Route
+            path="/:organizationSlug/projects/:projectId"
+            element={<ProjectDetail />}
+          />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+function WelcomePage() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="max-w-md mx-auto text-center">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Project Management System
           </h1>
           <p className="text-lg text-gray-600">
-            Built with Vite + React + TypeScript + Tailwind CSS + Apollo GraphQL
+            Built with React, TypeScript, and GraphQL
           </p>
         </div>
 
-        <div className="card max-w-md mx-auto mb-8">
-          <div className="card-body text-center">
-            <button
-              className="btn-primary mb-4"
-              onClick={() => setCount((count) => count + 1)}
-            >
-              Count is {count}
-            </button>
-            <p className="text-gray-600 text-sm mb-4">
-              Edit{" "}
-              <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">
-                src/App.tsx
-              </code>{" "}
-              and save to test HMR
-            </p>
-          </div>
-        </div>
-
-        <div className="card mb-8">
-          <div className="card-header">
-            <h3 className="font-medium">GraphQL API Test</h3>
-          </div>
+        <div className="card">
           <div className="card-body">
-            {loading && (
-              <p className="text-gray-600">Loading organizations...</p>
-            )}
-            {error && <p className="text-red-600">Error: {error.message}</p>}
-            {data && (
-              <div>
-                <p className="text-green-600 mb-2">
-                  ✅ GraphQL connection successful!
-                </p>
-                <p className="text-sm text-gray-600">
-                  Found {data.organizations.length} organizations
-                </p>
-                {data.organizations.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {data.organizations.map((org: any) => (
-                      <div key={org.id} className="p-2 bg-gray-100 rounded">
-                        <span className="font-medium">{org.name}</span>
-                        <span className="text-sm text-gray-500 ml-2">
-                          ({org.slug})
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="card">
-            <div className="card-header">
-              <h3 className="font-medium">Frontend</h3>
-            </div>
-            <div className="card-body">
-              <div className="space-y-2">
-                <div className="badge-primary">React 18</div>
-                <div className="badge-primary">TypeScript</div>
-                <div className="badge-primary">Vite</div>
-                <div className="badge-primary">Tailwind CSS</div>
-                <div className="badge-primary">Apollo Client</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-header">
-              <h3 className="font-medium">Backend</h3>
-            </div>
-            <div className="card-body">
-              <div className="space-y-2">
-                <div className="badge-success">Django</div>
-                <div className="badge-success">GraphQL</div>
-                <div className="badge-success">PostgreSQL</div>
-                <div className="badge-success">Multi-tenant</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-header">
-              <h3 className="font-medium">Features</h3>
-            </div>
-            <div className="card-body">
-              <div className="space-y-2">
-                <div className="badge-warning">Projects</div>
-                <div className="badge-warning">Tasks</div>
-                <div className="badge-warning">Comments</div>
-                <div className="badge-warning">Dashboard</div>
-              </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              No Organizations Found
+            </h2>
+            <p className="text-gray-600 mb-6">
+              It looks like there are no organizations set up yet. Create your
+              first organization in the Django admin panel to get started.
+            </p>
+            <div className="space-y-4">
+              <a
+                href="http://localhost:8000/admin/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary w-full"
+              >
+                Open Django Admin
+              </a>
+              <button
+                onClick={() => window.location.reload()}
+                className="btn-secondary w-full"
+              >
+                Refresh Page
+              </button>
             </div>
           </div>
         </div>
+
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center">
+            <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <span className="text-primary-600 text-xl">📁</span>
+            </div>
+            <h3 className="text-sm font-medium text-gray-900">Projects</h3>
+            <p className="text-xs text-gray-500">Organize your work</p>
+          </div>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <span className="text-success-600 text-xl">✅</span>
+            </div>
+            <h3 className="text-sm font-medium text-gray-900">Tasks</h3>
+            <p className="text-xs text-gray-500">Track progress</p>
+          </div>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-warning-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <span className="text-warning-600 text-xl">💬</span>
+            </div>
+            <h3 className="text-sm font-medium text-gray-900">Comments</h3>
+            <p className="text-xs text-gray-500">Collaborate</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-6xl font-bold text-gray-300 mb-4">404</h1>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          Page Not Found
+        </h2>
+        <p className="text-gray-600 mb-6">
+          The page you're looking for doesn't exist.
+        </p>
+        <button onClick={() => window.history.back()} className="btn-primary">
+          Go Back
+        </button>
       </div>
     </div>
   );
