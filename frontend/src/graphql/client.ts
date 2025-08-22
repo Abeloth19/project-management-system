@@ -25,6 +25,7 @@ const client = new ApolloClient({
         keyFields: ["id"],
         fields: {
           tasks: {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             merge(_existing = [], incoming) {
               return incoming;
             },
@@ -35,6 +36,7 @@ const client = new ApolloClient({
         keyFields: ["id"],
         fields: {
           comments: {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             merge(_existing = [], incoming) {
               return incoming;
             },
