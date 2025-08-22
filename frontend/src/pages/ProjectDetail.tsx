@@ -1,9 +1,10 @@
 import { useQuery } from "@apollo/client";
 import { useParams, Link } from "react-router-dom";
-import { GET_PROJECT, GET_TASKS } from "../graphql/queries";
-import type { Project, Task } from "../types";
+import { GET_PROJECT } from "../graphql/queries";
+import type { Project } from "../types";
 import Layout from "../components/common/Layout";
 import LoadingSpinner from "../components/common/LoadingSpinner";
+import TaskBoard from "../components/tasks/TaskBoard";
 
 interface ProjectDetailParams {
   organizationSlug: string;
@@ -23,16 +24,7 @@ export default function ProjectDetail() {
     skip: !projectId,
   });
 
-  const {
-    loading: tasksLoading,
-    error: tasksError,
-    data: tasksData,
-  } = useQuery(GET_TASKS, {
-    variables: { projectId },
-    skip: !projectId,
-  });
-
-  if (projectLoading || tasksLoading) {
+  if (projectLoading) {
     return (
       <Layout organizationSlug={organizationSlug}>
         <LoadingSpinner fullScreen text="Loading project..." />
@@ -40,15 +32,13 @@ export default function ProjectDetail() {
     );
   }
 
-  if (projectError || tasksError) {
+  if (projectError) {
     return (
       <Layout organizationSlug={organizationSlug}>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-            <p className="text-gray-600">
-              {projectError?.message || tasksError?.message}
-            </p>
+            <p className="text-gray-600">{projectError?.message}</p>
           </div>
         </div>
       </Layout>
@@ -56,7 +46,6 @@ export default function ProjectDetail() {
   }
 
   const project: Project = projectData?.project;
-  const tasks: Task[] = tasksData?.tasks || [];
 
   if (!project) {
     return (
@@ -74,11 +63,6 @@ export default function ProjectDetail() {
       </Layout>
     );
   }
-
-  const todoTasks = tasks.filter((task) => task.status === "TODO");
-  const inProgressTasks = tasks.filter((task) => task.status === "IN_PROGRESS");
-  const doneTasks = tasks.filter((task) => task.status === "DONE");
-  const blockedTasks = tasks.filter((task) => task.status === "BLOCKED");
 
   return (
     <Layout organizationSlug={organizationSlug}>
@@ -152,90 +136,14 @@ export default function ProjectDetail() {
             <h2 className="text-lg font-medium text-gray-900">Task Board</h2>
           </div>
           <div className="card-body">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <TaskColumn
-                title="To Do"
-                tasks={todoTasks}
-                bgColor="bg-gray-50"
-              />
-              <TaskColumn
-                title="In Progress"
-                tasks={inProgressTasks}
-                bgColor="bg-blue-50"
-              />
-              <TaskColumn
-                title="Done"
-                tasks={doneTasks}
-                bgColor="bg-green-50"
-              />
-              <TaskColumn
-                title="Blocked"
-                tasks={blockedTasks}
-                bgColor="bg-red-50"
-              />
-            </div>
+            <TaskBoard
+              organizationSlug={organizationSlug!}
+              projectId={project.id}
+            />
           </div>
         </div>
       </div>
     </Layout>
-  );
-}
-
-interface TaskColumnProps {
-  title: string;
-  tasks: Task[];
-  bgColor: string;
-}
-
-function TaskColumn({ title, tasks, bgColor }: TaskColumnProps) {
-  return (
-    <div className={`${bgColor} rounded-lg p-4`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-medium text-gray-900">{title}</h3>
-        <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
-          {tasks.length}
-        </span>
-      </div>
-      <div className="space-y-3">
-        {tasks.map((task) => (
-          <div
-            key={task.id}
-            className="bg-white p-3 rounded-lg shadow-sm border border-gray-200"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-gray-900 truncate">
-                {task.title}
-              </h4>
-              <span
-                className={`badge-sm ${getPriorityBadgeClass(task.priority)}`}
-              >
-                {task.priority}
-              </span>
-            </div>
-            {task.description && (
-              <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-                {task.description}
-              </p>
-            )}
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              {task.assigneeEmail && (
-                <span className="truncate">{task.assigneeEmail}</span>
-              )}
-              {task.commentCount > 0 && (
-                <span className="flex items-center">
-                  💬 {task.commentCount}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-        {tasks.length === 0 && (
-          <div className="text-center py-4">
-            <p className="text-sm text-gray-500">No tasks</p>
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -249,21 +157,6 @@ function getStatusBadgeClass(status: string): string {
       return "badge-warning";
     case "CANCELLED":
       return "badge-danger";
-    default:
-      return "badge-gray";
-  }
-}
-
-function getPriorityBadgeClass(priority: string): string {
-  switch (priority) {
-    case "URGENT":
-      return "badge-danger";
-    case "HIGH":
-      return "badge-warning";
-    case "MEDIUM":
-      return "badge-primary";
-    case "LOW":
-      return "badge-gray";
     default:
       return "badge-gray";
   }

@@ -8,6 +8,7 @@ import { useQuery } from "@apollo/client";
 import { GET_ORGANIZATIONS } from "./graphql/queries";
 import Dashboard from "./pages/Dashboard";
 import ProjectDetail from "./pages/ProjectDetail";
+import TaskDetail from "./pages/TaskDetail";
 
 function App() {
   const { loading, error, data } = useQuery(GET_ORGANIZATIONS);
@@ -59,6 +60,10 @@ function App() {
           <Route
             path="/:organizationSlug/projects/:projectId"
             element={<ProjectDetail />}
+          />
+          <Route
+            path="/:organizationSlug/projects/:projectId/tasks/:taskId"
+            element={<TaskDetail />}
           />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
